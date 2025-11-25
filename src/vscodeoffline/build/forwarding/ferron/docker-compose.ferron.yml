@@ -1,0 +1,72 @@
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: ${LOG_MAX_SIZE:-10m}
+    max-file: ${LOG_MAX_FILE:-3}
+    compress: ${LOG_COMPRESS:-true}
+
+services:
+  vscsync:
+    container_name: vscsync
+    image: lolinternet/vscsync:latest
+    restart: unless-stopped
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        mkdir -p $$ARTIFACTS/installers
+        exec "$$@"
+      - --
+    command: sh -c "python3 sync.py --artifacts $$ARTIFACTS $$SYNCARGS"
+    logging: *default-logging
+    volumes:
+      - vscodeoffline:/artifacts/
+    environment:
+      SYNCARGS: ${SYNCARGS:-"--sync"}
+    networks:
+      - vscodeoffline-network
+
+  vscgallery:
+    container_name: vscgallery
+    image: lolinternet/vscgallery:latest
+    restart: unless-stopped
+    logging: *default-logging
+    volumes:
+      - vscodeoffline:/artifacts/
+    environment:
+      BIND: ${BIND:-0.0.0.0:80}
+      SSLARGS: ${SSLARGS:-}
+    networks:
+      - vscodeoffline-network
+
+  vscodeoffline:
+    container_name: vscodeoffline
+    image: ferronserver/ferron:2
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      - vscgallery
+    configs:
+      - source: vscodeoffline-reverse
+        target: /etc/ferron.kdl
+    networks:
+      - vscodeoffline-network
+
+configs:
+  vscodeoffline-reverse:
+    content: |
+      * {
+          include "/etc/ferron.d/**/*.kdl"
+          location "/" {
+              proxy "http://vscgallery"
+          }
+      }
+
+volumes:
+  vscodeoffline:
+    name: vscodeoffline
+
+networks:
+  vscodeoffline-network:
+    name: vscodeoffline-network
+    driver: bridge

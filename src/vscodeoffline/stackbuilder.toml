@@ -1,0 +1,18 @@
+[paths]
+environments_path = "./environments"
+extensions_dirs = ["extensions", "extensions/mTLS"]
+
+[build]
+extensions = ["nginx-proxy", "ferron"]
+
+[build.environments]
+available = ["forwarding", "letsencrypt", "step-ca"]
+
+[build.environments.forwarding]
+extensions = ["ferron"]
+
+[build.environments.letsencrypt]
+extensions = ["nginx-proxy", "ferron"]
+
+[build.environments.step-ca]
+extensions = ["nginx-proxy", "ferron"]

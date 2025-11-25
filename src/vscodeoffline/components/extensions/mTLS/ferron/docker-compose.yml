@@ -1,0 +1,11 @@
+services:
+  vscodeoffline:
+    configs:
+      - source: vscodeoffline-mtls
+        target: /etc/ferron.d/mtls/vautls.kdl
+configs:
+  vscodeoffline-mtls:
+    content: |
+      * {
+          tls_client_certificate "${TLS_CLIENT_CERTIFICATE:-/app/data/ca/ca-tls.cert}"
+      }
