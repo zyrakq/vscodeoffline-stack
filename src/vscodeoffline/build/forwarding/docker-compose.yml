@@ -1,0 +1,49 @@
+services:
+  vscsync:
+    container_name: vscsync
+    image: lolinternet/vscsync:latest
+    restart: unless-stopped
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        mkdir -p $$ARTIFACTS/installers
+        exec "$$@"
+      - --
+    command: sh -c "python3 sync.py --artifacts $$ARTIFACTS $$SYNCARGS"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: 10m
+        max-file: 3
+    volumes:
+      - vscodeoffline:/artifacts/
+    environment:
+      SYNCARGS: ${SYNCARGS:-"--sync"}
+    networks:
+      - vscodeoffline-network
+  vscgallery:
+    container_name: vscgallery
+    image: lolinternet/vscgallery:latest
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: 10m
+        max-file: 3
+    volumes:
+      - vscodeoffline:/artifacts/
+    environment:
+      BIND: ${BIND:-0.0.0.0:80}
+      SSLARGS: ${SSLARGS:-}
+    networks:
+      - vscodeoffline-network
+    ports:
+      - "80:80"
+volumes:
+  vscodeoffline:
+    name: vscodeoffline
+networks:
+  vscodeoffline-network:
+    name: vscodeoffline-network
+    driver: bridge

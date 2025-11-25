@@ -1,0 +1,13 @@
+services:
+  vscgallery:
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        echo "$$SSL_CLIENT_CERT_CONTENT" | base64 -d > ${SSL_CLIENT_CERT_PATH}
+        exec "$$@"
+      - --
+    command: sh -c "gunicorn $$SSLARGS --reload --bind $$BIND --access-logfile - --timeout $$TIMEOUT --threads $$THREADS server:application"
+    environment:
+      SSL_CLIENT_CERT_CONTENT: ${SSL_CLIENT_CERT_CONTENT}
+      SSL_CLIENT_CERT_PATH: ${SSL_CLIENT_CERT_PATH:-/certs/${VIRTUAL_HOST}.ca.crt}

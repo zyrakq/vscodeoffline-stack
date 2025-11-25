@@ -1,0 +1,27 @@
+[paths]
+environments_path = "./environments"
+extensions_dirs = ["extensions", "extensions/guard"]
+
+[build]
+skip_base_generation = true
+extensions = ["blank", "mTLS"]
+
+[build.combos]
+base = ["blank"]
+
+[build.environments]
+available = ["devcontainer", "forwarding", "letsencrypt", "step-ca"]
+
+[build.environments.devcontainer]
+combos = ["base"]
+
+[build.environments.forwarding]
+combos = ["base"]
+
+[build.environments.letsencrypt]
+skip_base_generation = false
+extensions = ["mTLS"]
+
+[build.environments.step-ca]
+skip_base_generation = false
+extensions = ["mTLS"]

@@ -1,0 +1,67 @@
+services:
+  vscsync:
+    container_name: vscsync
+    image: lolinternet/vscsync:latest
+    restart: unless-stopped
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        mkdir -p $$ARTIFACTS/installers
+        exec "$$@"
+      - --
+    command: sh -c "python3 sync.py --artifacts $$ARTIFACTS $$SYNCARGS"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: 10m
+        max-file: 3
+    volumes:
+      - vscodeoffline:/artifacts/
+    environment:
+      SYNCARGS: ${SYNCARGS:-"--sync"}
+    networks:
+      - vscodeoffline-network
+  vscgallery:
+    container_name: vscgallery
+    image: lolinternet/vscgallery:latest
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: 10m
+        max-file: 3
+    volumes:
+      - vscodeoffline:/artifacts/
+      - letsencrypt-certs:/certs
+    environment:
+      BIND: ${BIND:-0.0.0.0:80}
+      SSLARGS: ${SSLARGS:-}
+      VIRTUAL_PORT: ${VIRTUAL_PORT:-80}
+      VIRTUAL_HOST: ${VIRTUAL_HOST}
+      LETSENCRYPT_HOST: ${LETSENCRYPT_HOST}
+      LETSENCRYPT_EMAIL: ${LETSENCRYPT_EMAIL}
+      SSL_CLIENT_CERT_CONTENT: ${SSL_CLIENT_CERT_CONTENT}
+      SSL_CLIENT_CERT_PATH: ${SSL_CLIENT_CERT_PATH:-/certs/${VIRTUAL_HOST}.ca.crt}
+    networks:
+      - vscodeoffline-network
+      - letsencrypt-network
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        echo "$$SSL_CLIENT_CERT_CONTENT" | base64 -d > ${SSL_CLIENT_CERT_PATH}
+        exec "$$@"
+      - --
+    command: sh -c "gunicorn $$SSLARGS --reload --bind $$BIND --access-logfile - --timeout $$TIMEOUT --threads $$THREADS server:application"
+volumes:
+  vscodeoffline:
+    name: vscodeoffline
+  letsencrypt-certs:
+    external: true
+networks:
+  vscodeoffline-network:
+    name: vscodeoffline-network
+    driver: bridge
+  letsencrypt-network:
+    external: true

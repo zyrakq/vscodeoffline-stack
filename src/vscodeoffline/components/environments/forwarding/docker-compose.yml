@@ -1,0 +1,4 @@
+services:
+  vscgallery:
+    ports:
+      - "80:80"

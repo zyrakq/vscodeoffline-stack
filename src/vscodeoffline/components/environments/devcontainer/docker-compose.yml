@@ -1,0 +1,8 @@
+services:
+  vscgallery:
+    networks:
+      - vscodeoffline-workspace-network
+
+networks:
+  vscodeoffline-workspace-network:
+    external: true
